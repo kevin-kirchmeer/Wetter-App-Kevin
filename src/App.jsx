@@ -1,4 +1,4 @@
-import { Flex, Heading, Text, Grid } from "@radix-ui/themes";
+import { Flex, Heading, Text, Grid, Card } from "@radix-ui/themes";
 import { useEffect, useState } from "react";
 
 export default function App() {
@@ -7,8 +7,9 @@ export default function App() {
 
   const [current, setCurrent] = useState(null);
   const [forecast, setForecast] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  const [error, setError] = useState(null)
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -38,35 +39,6 @@ export default function App() {
     return () => controller.abort();
   }, [city]);
 
-  {error && <Text size="4">{error}</Text>}
-
-  {
-    current && (
-      <Flex>
-        <Heading>
-          {current.name}, {current.sys.country}
-        </Heading>
-        <Text>{Math.round(current.main.temp)} °C</Text>
-        <Text>{current.weather[0].description}</Text>
-        <Text>Wind: {current.wind.speed} m/s</Text>
-      </Flex>
-    );
-  }
-
-  <Grid columns="2" md:columns="5" gap="3">
-    {forecast.map((day) => (
-      <Flex key={day.dt} radius="medium">
-        <Text>
-          {new Date(day.dt_txt).toLocaleDateString("de-DE", {
-            weekday: "short",
-          })}
-        </Text>
-        <Text>{Math.round(day.main.temp)} °C</Text>
-        <Text size="2">{day.weather[0].description}</Text>
-      </Flex>
-    ))}
-  </Grid>;
-
   function handleSubmit(e) {
     e.preventDefault();
     if (query.trim() === "") return;
@@ -83,6 +55,34 @@ export default function App() {
         />
         <button type="submit">Suchen</button>
       </form>
+
+      {loading && <Text size="4">Laden...</Text>}
+      {error && <Text size="4">{error}</Text>}
+
+      {current && (
+        <Flex>
+          <Heading>
+            {current.name}, {current.sys.country}
+          </Heading>
+          <Text>{Math.round(current.main.temp)} °C</Text>
+          <Text>{current.weather[0].description}</Text>
+          <Text>Wind: {current.wind.speed} m/s</Text>
+        </Flex>
+      )}
+
+      <Grid columns={{initial: "2", md: "5"}} gap="3">
+        {forecast.map((day) => (
+          <Card key={day.dt} radius="medium">
+            <Text>
+              {new Date(day.dt_txt).toLocaleDateString("de-DE", {
+                weekday: "short",
+              })}
+            </Text>
+            <Text>{Math.round(day.main.temp)} °C</Text>
+            <Text size="2">{day.weather[0].description}</Text>
+          </Card>
+        ))}
+      </Grid>
     </Flex>
   );
 }
