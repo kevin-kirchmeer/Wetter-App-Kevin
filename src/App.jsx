@@ -1,9 +1,9 @@
-import { Flex } from "@radix-ui/themes";
+import { Flex, Heading } from "@radix-ui/themes";
 import { useState } from "react";
 
 export default function App() {
   const [query, setQuery] = useState("");
-  const [city, setCity] = useState("Berlin");
+  const [city, setCity] = useState("Weilburg");
 
   function handleSubmit(e) {
     e.preventDefault();
@@ -17,6 +17,7 @@ export default function App() {
         <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Stadt suchen..."/>
         <button type="submit">Suchen</button>
       </form>
+      <Heading>{city}</Heading>
     </Flex>
   );
 }
