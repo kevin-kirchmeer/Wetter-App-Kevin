@@ -1,16 +1,25 @@
-import { Flex, Heading, Text, Grid, Card } from "@radix-ui/themes";
+import {
+  Flex,
+  Heading,
+  Text,
+  Grid,
+  Card,
+  Theme,
+  TextField,
+  Button,
+  Box,
+  Progress,
+} from "@radix-ui/themes";
+
 import { useEffect, useState } from "react";
 import { getCurrentWeather, getForecast } from "./api/weatherApi";
-
 
 export default function App() {
   const [query, setQuery] = useState("");
   const [city, setCity] = useState("Berlin");
-
   const [current, setCurrent] = useState(null);
   const [forecast, setForecast] = useState([]);
   const [loading, setLoading] = useState(false);
-
   const [error, setError] = useState(null);
 
   useEffect(() => {
@@ -48,40 +57,80 @@ export default function App() {
   }
 
   return (
-    <Flex direction="column">
-      <form onSubmit={handleSubmit}>
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Stadt suchen..."
-        />
-        <button type="submit">Suchen</button>
-      </form>
+    <Flex
+      direction="column"
+      p="6"
+      gap="6"
+      className="max-w-260 mx-auto min-h-screen"
+    >
+      <Flex justify="between">
+        <Flex align="end">
+          <Heading>AEON</Heading>
+          <Text size="2">Himmelsprotokoll</Text>
+        </Flex>
+        <Box>
+          <form onSubmit={handleSubmit}>
+            <Theme radius="full" className="">
+              <TextField.Root
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                size="3"
+                placeholder="Stadt suchen..."
+              >
+                <TextField.Slot side="right" px="1">
+                  <Button type="submit" size="2">
+                    Suchen
+                  </Button>
+                </TextField.Slot>
+              </TextField.Root>
+            </Theme>
+          </form>
+        </Box>
+      </Flex>
 
-      {loading && <Text size="4">Laden...</Text>}
+      {loading && (
+        <Box maxWidth="300px">
+          <Progress />
+        </Box>
+      )}
       {error && <Text size="4">{error}</Text>}
 
       {current && (
-        <Flex>
-          <Heading>
-            {current.name}, {current.sys.country}
-          </Heading>
-          <Text>{Math.round(current.main.temp)} °C</Text>
-          <Text>{current.weather[0].description}</Text>
-          <Text>Wind: {current.wind.speed} m/s</Text>
+        <Flex gap="5">
+          <Card className="w-full">
+            <Heading>
+              {current.name}, {current.sys.country}
+            </Heading>
+            <Text>{Math.round(current.main.temp)} °C</Text>
+            {current.weather?.[0]?.icon && (
+              <img
+                src={`https://openweathermap.org/img/wn/${current.weather[0].icon}@2x.png`}
+                alt={current.weather[0].description}
+                style={{ width: 80, height: 80 }}
+              />
+            )}
+            <Text>Wind: {current.wind.speed} m/s</Text>
+          </Card>
         </Flex>
       )}
 
-      <Grid columns={{initial: "2", md: "5"}} gap="3">
+      <Grid columns={{ initial: "2", md: "5" }} gap="3" width="auto">
         {forecast.map((day) => (
           <Card key={day.dt} radius="medium">
-            <Text>
-              {new Date(day.dt_txt).toLocaleDateString("de-DE", {
-                weekday: "short",
-              })}
-            </Text>
-            <Text>{Math.round(day.main.temp)} °C</Text>
-            <Text size="2">{day.weather[0].description}</Text>
+            <Flex justify="center" align="center" direction="column">
+              <Text>
+                {new Date(day.dt_txt).toLocaleDateString("de-DE", {
+                  weekday: "short",
+                })}
+              </Text>
+              <Text>{Math.round(day.main.temp)} °C</Text>
+              <img
+                src={`https://openweathermap.org/img/wn/${day.weather[0].icon}@2x.png`}
+                alt={day.weather[0].description}
+                style={{ width: 80, height: 80 }}
+              />
+              <Text size="2">{day.weather[0].description}</Text>
+            </Flex>
           </Card>
         ))}
       </Grid>
