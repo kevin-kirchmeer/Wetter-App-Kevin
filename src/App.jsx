@@ -8,10 +8,15 @@ export default function App() {
   const [current, setCurrent] = useState(null);
   const [forecast, setForecast] = useState([]);
 
+  const [error, setError] = useState(null)
+
   useEffect(() => {
     const controller = new AbortController();
 
     async function load() {
+      setLoading(true);
+      setError(null);
+
       try {
         const weather = await getCurrentWeather(city);
         const forecastData = await getForecast(city);
@@ -23,13 +28,17 @@ export default function App() {
         );
       } catch (error) {
         // ein abgebrochener Request ist kein echter Fehler
-        if (error.name !== "AbortError") console.error(error);
+        if (error.name !== "AbortError") setError(error.message);
+      } finally {
+        setLoading(false);
       }
     }
 
     load();
     return () => controller.abort();
   }, [city]);
+
+  {error && <Text size="4">{error}</Text>}
 
   {
     current && (
