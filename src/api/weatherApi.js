@@ -3,10 +3,10 @@ const BASE = "https://api.openweathermap.org/data/2.5";
 
 // Aktuelles Wetter für einen Ort
 
-export async function getCurrentWeather(city) {
+export async function getCurrentWeather(city, signal) {
   const url = `${BASE}/weather?q=${encodeURIComponent(city)}&units=metric&lang=de&appid=${API_KEY}`;
 
-  const response = await fetch(url);
+  const response = await fetch(url, { signal });
 
   if (!response.ok)
     throw new Error(`Das Wetter wurde nicht gefunden (${response.status})`);
@@ -16,10 +16,10 @@ export async function getCurrentWeather(city) {
 
 // 5 Tage Vorhersage (in 3 Stunden Schritten) für einen Ort
 
-export async function getForecast(city) {
+export async function getForecast(city, signal) {
   const url = `${BASE}/forecast?q=${encodeURIComponent(city)}&units=metric&lang=de&appid=${API_KEY}`;
 
-  const response = await fetch(url);
+  const response = await fetch(url, { signal });
   if (!response.ok) throw new Error(`Vorhersage nicht gefunden (${response.status})`);
 
   return response.json();
