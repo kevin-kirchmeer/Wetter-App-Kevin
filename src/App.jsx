@@ -1,9 +1,11 @@
 import { Flex, Heading, Text, Grid, Card } from "@radix-ui/themes";
 import { useEffect, useState } from "react";
+import { getCurrentWeather, getForecast } from "./api/weatherApi";
+
 
 export default function App() {
   const [query, setQuery] = useState("");
-  const [city, setCity] = useState("Weilburg");
+  const [city, setCity] = useState("Berlin");
 
   const [current, setCurrent] = useState(null);
   const [forecast, setForecast] = useState([]);
