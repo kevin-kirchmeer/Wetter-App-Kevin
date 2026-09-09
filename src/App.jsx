@@ -9,17 +9,26 @@ export default function App() {
   const [forecast, setForecast] = useState([]);
 
   useEffect(() => {
-    async function load() {
-      const weather = await getCurrentWeather(city);
-      const forecastData = await getForecast(city);
+    const controller = new AbortController();
 
-      setCurrent(weather);
-      // aus den 3-Stunden-Schritten nur den Mittagswert je Tag herauspicken:
-      setForecast(
-        forecastData.list.filter((item) => item.dt_txt.includes("12:00:00")),
-      );
+    async function load() {
+      try {
+        const weather = await getCurrentWeather(city);
+        const forecastData = await getForecast(city);
+
+        setCurrent(weather);
+        // aus den 3-Stunden-Schritten nur den Mittagswert je Tag herauspicken:
+        setForecast(
+          forecastData.list.filter((item) => item.dt_txt.includes("12:00:00")),
+        );
+      } catch (error) {
+        // ein abgebrochener Request ist kein echter Fehler
+        if (error.name !== "AbortError") console.error(error);
+      }
     }
+
     load();
+    return () => controller.abort();
   }, [city]);
 
   {
