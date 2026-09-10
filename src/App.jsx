@@ -14,16 +14,23 @@ import {
 import { Crosshair2Icon } from "@radix-ui/react-icons";
 
 import { useEffect, useState } from "react";
-import { getCurrentWeather, getForecast } from "./api/weatherApi";
+import {
+  getCurrentWeather,
+  getForecast,
+  getCurrentWeatherByCoords,
+  getForecastByCoords,
+} from "./api/weatherApi";
 import "./js/weatherBackground";
 import { getWeatherBackground } from "./js/weatherBackground";
 
 export default function App() {
   const [query, setQuery] = useState("");
   const [city, setCity] = useState("Berlin");
+  const [coords, setCoords] = useState(null);
   const [current, setCurrent] = useState(null);
   const [forecast, setForecast] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [locating, setLocating] = useState(false);
   const [error, setError] = useState(null);
 
   useEffect(() => {
@@ -34,10 +41,26 @@ export default function App() {
       setError(null);
 
       try {
-        const weather = await getCurrentWeather(city);
-        const forecastData = await getForecast(city);
+        let weatherData;
+        let forecastData;
 
-        setCurrent(weather);
+        if (coords) {
+          weatherData = await getCurrentWeatherByCoords(
+            coords.lat,
+            coords.lon,
+            controller.signal,
+          );
+          forecastData = await getForecastByCoords(
+            coords.lat,
+            coords.lon,
+            controller.signal,
+          );
+        } else {
+          weatherData = await getCurrentWeather(city, controller.signal);
+          forecastData = await getForecast(city, controller.signal);
+        }
+
+        setCurrent(weatherData);
         // aus den 3-Stunden-Schritten nur den Mittagswert je Tag herauspicken:
         setForecast(
           forecastData.list.filter((item) => item.dt_txt.includes("12:00:00")),
@@ -52,12 +75,40 @@ export default function App() {
 
     load();
     return () => controller.abort();
-  }, [city]);
+  }, [city, coords]);
 
   function handleSubmit(e) {
     e.preventDefault();
     if (query.trim() === "") return;
+    setCoords(null);
     setCity(query.trim());
+  }
+
+  function handleGeolocation() {
+    if (!navigator.geolocation) {
+      setError("Standortermittlung wird von deinem Browser nicht unterstützt.");
+      return;
+    }
+
+    setLocating(true);
+    setError(null);
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setCoords({
+          lat: position.coords.latitude,
+          lon: position.coords.longitude,
+        });
+        setLocating(false);
+      },
+      () => {
+        setError(
+          "Standort konnte nicht ermittelt werden (Zugriff verweigert oder Timeout).",
+        );
+        setLocating(false);
+      },
+      { timeout: 10000 },
+    );
   }
 
   const weatherTyp = current?.weather?.[0]?.main;
@@ -68,7 +119,7 @@ export default function App() {
   };
 
   const glassCardStyle = {
-    // transparente Karte 
+    // transparente Karte
     "--card-background-color": "rgba(255, 255, 255, 0.20)",
     backgroundColor: "rgba(255, 255, 255, 0.75) !important",
     backdropFilter: "blur(1px)",
@@ -90,8 +141,11 @@ export default function App() {
           <Text size="2">Himmelsprotokoll</Text>
         </Flex>
 
-        <Flex gap="2" justify={{ initial: "center"}} align={{initial: "center"}}>
-
+        <Flex
+          gap="2"
+          justify={{ initial: "center" }}
+          align={{ initial: "center" }}
+        >
           <form onSubmit={handleSubmit}>
             <Theme radius="full">
               <TextField.Root
@@ -111,12 +165,15 @@ export default function App() {
 
           {/*     Location Weather       */}
           <Theme radius="full">
-            <Button>
+            <Button
+              type="button"
+              variant="soft"
+              onClick={handleGeolocation}
+              disabled={locating}
+            >
               {locating ? "Suche..." : <Crosshair2Icon />}
             </Button>
           </Theme>
-
-
         </Flex>
       </Flex>
 
