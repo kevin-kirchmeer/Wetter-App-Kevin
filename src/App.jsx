@@ -11,6 +11,8 @@ import {
   Progress,
 } from "@radix-ui/themes";
 
+import { Crosshair2Icon } from "@radix-ui/react-icons";
+
 import { useEffect, useState } from "react";
 import { getCurrentWeather, getForecast } from "./api/weatherApi";
 import "./js/weatherBackground";
@@ -66,7 +68,8 @@ export default function App() {
   };
 
   const glassCardStyle = {
-    "--card-background-color": "rgba(255, 255, 255, 0.45)",
+    // transparente Karte 
+    "--card-background-color": "rgba(255, 255, 255, 0.20)",
     backgroundColor: "rgba(255, 255, 255, 0.75) !important",
     backdropFilter: "blur(1px)",
     WebkitBackdropFilter: "blur(1px)",
@@ -76,19 +79,21 @@ export default function App() {
 
   return (
     <Flex direction="column" p="5" gap="6" style={backgroundStyle}>
-      <Flex justify={{initial: "start", md:"between"}} align={{initial: "center"}} direction={{initial: "column", md:"row"}} gap="5">
+      <Flex
+        justify={{ initial: "start", md: "between" }}
+        align={{ initial: "center" }}
+        direction={{ initial: "column", md: "row" }}
+        gap="5"
+      >
         <Flex align="end">
           <Heading>AEON</Heading>
           <Text size="2">Himmelsprotokoll</Text>
         </Flex>
 
-        <Box>
-          <img src={} alt="" />
-        </Box>
+        <Flex gap="2" justify={{ initial: "center"}} align={{initial: "center"}}>
 
-        <Box>
           <form onSubmit={handleSubmit}>
-            <Theme radius="full" className="">
+            <Theme radius="full">
               <TextField.Root
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
@@ -103,7 +108,16 @@ export default function App() {
               </TextField.Root>
             </Theme>
           </form>
-        </Box>
+
+          {/*     Location Weather       */}
+          <Theme radius="full">
+            <Button>
+              {locating ? "Suche..." : <Crosshair2Icon />}
+            </Button>
+          </Theme>
+
+
+        </Flex>
       </Flex>
 
       {loading && (
