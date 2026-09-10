@@ -48,26 +48,20 @@ export default function App() {
       setError(null); // Alten Fehler zurücksetzen
 
       try {
-        let weatherData;
-        let forecastData;
-
-        // Fall 1: GPS-Koordinaten vorhanden -> Wetter per Koordinaten laden
-        if (coords) {
-          weatherData = await getCurrentWeatherByCoords(
-            coords.lat,
-            coords.lon,
-            controller.signal,
-          );
-          forecastData = await getForecastByCoords(
-            coords.lat,
-            coords.lon,
-            controller.signal,
-          );
-          // Fall 2: Keine GPS-Daten -> Wetter per Stadtname laden
-        } else {
-          weatherData = await getCurrentWeather(city, controller.signal);
-          forecastData = await getForecast(city, controller.signal);
-        }
+        // Promise.all startet beide Requests zeitgleich im Netzwerk
+        const [weatherData, forecastData] = await (coords
+          ? Promise.all([
+              getCurrentWeatherByCoords(
+                coords.lat,
+                coords.lon,
+                controller.signal,
+              ),
+              getForecastByCoords(coords.lat, coords.lon, controller.signal),
+            ])
+          : Promise.all([
+              getCurrentWeather(city, controller.signal),
+              getForecast(city, controller.signal),
+            ]));
 
         // Daten im State speichern -> Löst Re-Render aus
         setCurrent(weatherData);
@@ -160,8 +154,12 @@ export default function App() {
         gap="5"
       >
         <Flex align="end">
-          <Heading weight="bold" style={{ color: "white" }}>ZEUS</Heading>
-          <Text size="2" weight="light" style={{color: "white"}}>Himmelsprotokoll</Text>
+          <Heading weight="bold" style={{ color: "white" }}>
+            ZEUS
+          </Heading>
+          <Text size="2" weight="light" style={{ color: "white" }}>
+            Himmelsprotokoll
+          </Text>
         </Flex>
 
         <Flex
@@ -203,7 +201,7 @@ export default function App() {
 
       {/* Bedingtes Rendering: Progress Bar nur anzeigen wenn loading === true */}
       {loading && (
-        <Flex justify={{initial: "center"}} align={{initial: "center"}}>
+        <Flex justify={{ initial: "center" }} align={{ initial: "center" }}>
           <Progress />
         </Flex>
       )}
@@ -213,13 +211,23 @@ export default function App() {
 
       {/* Aktuelle Wetterkarte: Nur anzeigen wenn Daten geladen wurden (current !== null) */}
       {current && (
-        <Flex gap="2" p={{initial:"4", md:"9"}} direction={{ initial: "column", md:"row" }} align={{ initial: "center" }} justify={{initial: "between"}}>
+        <Flex
+          gap="2"
+          p={{ initial: "4", md: "9" }}
+          direction={{ initial: "column", md: "row" }}
+          align={{ initial: "center" }}
+          justify={{ initial: "between" }}
+        >
           <Heading size="8">
             {current.name}, {current.sys.country}
           </Heading>
 
-          <Flex direction={{ initial: "column"}} align={{ initial: "center" }}>
-            <Flex justify={{ initial: "center" }} direction={{ initial: "column" }} align={{ initial: "center" }}>
+          <Flex direction={{ initial: "column" }} align={{ initial: "center" }}>
+            <Flex
+              justify={{ initial: "center" }}
+              direction={{ initial: "column" }}
+              align={{ initial: "center" }}
+            >
               {current.weather?.[0]?.icon && (
                 <img
                   src={`https://openweathermap.org/img/wn/${current.weather[0].icon}@2x.png`}
