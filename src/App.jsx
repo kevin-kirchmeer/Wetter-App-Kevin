@@ -7,7 +7,6 @@ import {
   Theme,
   TextField,
   Button,
-  Box,
   Progress,
 } from "@radix-ui/themes";
 
@@ -64,7 +63,7 @@ export default function App() {
             coords.lon,
             controller.signal,
           );
-        // Fall 2: Keine GPS-Daten -> Wetter per Stadtname laden
+          // Fall 2: Keine GPS-Daten -> Wetter per Stadtname laden
         } else {
           weatherData = await getCurrentWeather(city, controller.signal);
           forecastData = await getForecast(city, controller.signal);
@@ -161,8 +160,8 @@ export default function App() {
         gap="5"
       >
         <Flex align="end">
-          <Heading>AEON</Heading>
-          <Text size="2">Himmelsprotokoll</Text>
+          <Heading weight="bold" style={{ color: "white" }}>ZEUS</Heading>
+          <Text size="2" weight="light" style={{color: "white"}}>Himmelsprotokoll</Text>
         </Flex>
 
         <Flex
@@ -193,7 +192,6 @@ export default function App() {
           <Theme radius="full">
             <Button
               type="button"
-              variant="soft"
               onClick={handleGeolocation}
               disabled={locating}
             >
@@ -205,9 +203,9 @@ export default function App() {
 
       {/* Bedingtes Rendering: Progress Bar nur anzeigen wenn loading === true */}
       {loading && (
-        <Box maxWidth="300px">
+        <Flex justify={{initial: "center"}} align={{initial: "center"}}>
           <Progress />
-        </Box>
+        </Flex>
       )}
 
       {/* Bedingtes Rendering: Text nur anzeigen wenn ein Fehlertext existiert */}
@@ -215,27 +213,33 @@ export default function App() {
 
       {/* Aktuelle Wetterkarte: Nur anzeigen wenn Daten geladen wurden (current !== null) */}
       {current && (
-        <Flex gap="5">
-          <Card style={glassCardStyle} className="w-full">
-            <Heading>
-              {current.name}, {current.sys.country}
-            </Heading>
+        <Flex gap="2" p={{initial:"4", md:"9"}} direction={{ initial: "column", md:"row" }} align={{ initial: "center" }} justify={{initial: "between"}}>
+          <Heading size="8">
+            {current.name}, {current.sys.country}
+          </Heading>
+
+          <Flex direction={{ initial: "column"}} align={{ initial: "center" }}>
+            <Flex justify={{ initial: "center" }} direction={{ initial: "column" }} align={{ initial: "center" }}>
+              {current.weather?.[0]?.icon && (
+                <img
+                  src={`https://openweathermap.org/img/wn/${current.weather[0].icon}@2x.png`}
+                  alt="Weather Icon"
+                  style={{ width: 80, height: 80 }}
+                />
+              )}
+              <Text size="8" weight="bold">
+                {Math.round(current.main.temp)} °C
+              </Text>
+            </Flex>
+            <Text size="2">{current.weather[0].description}</Text>
             {/* Math.round: Rundet Dezimalwerte auf ganze Grad Celsius */}
-            <Text>{Math.round(current.main.temp)} °C</Text>
-            {current.weather?.[0]?.icon && (
-              <img
-                src={`https://openweathermap.org/img/wn/${current.weather[0].icon}@2x.png`}
-                alt={current.weather[0].description}
-                style={{ width: 80, height: 80 }}
-              />
-            )}
             <Text>Wind: {current.wind.speed} m/s</Text>
-          </Card>
+          </Flex>
         </Flex>
       )}
 
       {/* Vorhersage-Grid: .map() läuft durch das Array und rendert für jeden Tag eine Card */}
-      <Grid columns={{ initial: "2", md: "5" }} gap="3" width="auto">
+      <Grid columns={{ initial: "1", md: "5" }} gap="3" width="auto">
         {forecast.map((day) => (
           // key={day.dt}: Eindeutige ID für React zur Render-Optimierung
           <Card style={glassCardStyle} key={day.dt} radius="medium">
@@ -249,7 +253,7 @@ export default function App() {
               <Text>{Math.round(day.main.temp)} °C</Text>
               <img
                 src={`https://openweathermap.org/img/wn/${day.weather[0].icon}@2x.png`}
-                alt={day.weather[0].description}
+                alt="weather icon"
                 style={{ width: 80, height: 80 }}
               />
               <Text size="2">{day.weather[0].description}</Text>
