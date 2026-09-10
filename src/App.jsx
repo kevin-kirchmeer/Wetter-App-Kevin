@@ -13,6 +13,8 @@ import {
 
 import { useEffect, useState } from "react";
 import { getCurrentWeather, getForecast } from "./api/weatherApi";
+import "./js/weatherBackground";
+import { getWeatherBackground } from "./js/weatherBackground";
 
 export default function App() {
   const [query, setQuery] = useState("");
@@ -56,18 +58,34 @@ export default function App() {
     setCity(query.trim());
   }
 
+  const weatherTyp = current?.weather?.[0]?.main;
+  const backgroundStyle = {
+    background: getWeatherBackground(weatherTyp),
+    minHeight: "100vh",
+    transition: "background 0.8s ease",
+  };
+
+  const glassCardStyle = {
+    "--card-background-color": "rgba(255, 255, 255, 0.45)",
+    backgroundColor: "rgba(255, 255, 255, 0.75) !important",
+    backdropFilter: "blur(1px)",
+    WebkitBackdropFilter: "blur(1px)",
+    border: "1px solid rgba(255, 255, 255, 0.3)",
+    boxShadow: "0 8px 32px rgba(0, 0, 0, 0.08)",
+  };
+
   return (
-    <Flex
-      direction="column"
-      p="6"
-      gap="6"
-      className="max-w-260 mx-auto min-h-screen"
-    >
-      <Flex justify="between">
+    <Flex direction="column" p="5" gap="6" style={backgroundStyle}>
+      <Flex justify={{initial: "start", md:"between"}} align={{initial: "center"}} direction={{initial: "column", md:"row"}} gap="5">
         <Flex align="end">
           <Heading>AEON</Heading>
           <Text size="2">Himmelsprotokoll</Text>
         </Flex>
+
+        <Box>
+          <img src={} alt="" />
+        </Box>
+
         <Box>
           <form onSubmit={handleSubmit}>
             <Theme radius="full" className="">
@@ -97,7 +115,7 @@ export default function App() {
 
       {current && (
         <Flex gap="5">
-          <Card className="w-full">
+          <Card style={glassCardStyle} className="w-full">
             <Heading>
               {current.name}, {current.sys.country}
             </Heading>
@@ -116,7 +134,7 @@ export default function App() {
 
       <Grid columns={{ initial: "2", md: "5" }} gap="3" width="auto">
         {forecast.map((day) => (
-          <Card key={day.dt} radius="medium">
+          <Card style={glassCardStyle} key={day.dt} radius="medium">
             <Flex justify="center" align="center" direction="column">
               <Text>
                 {new Date(day.dt_txt).toLocaleDateString("de-DE", {
