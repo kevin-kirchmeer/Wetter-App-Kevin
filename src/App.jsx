@@ -11,8 +11,9 @@ import {
 } from "@radix-ui/themes";
 
 import { Crosshair2Icon } from "@radix-ui/react-icons";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import  useWeather  from "./hooks/useWeather";
+import useDebounce from "./hooks/useDebounce";
 import useDynamicStyleWeatherBg from "./hooks/useDynamicStyleWeatherBg";
 
 // Speichern der letzten Eingabe von City
@@ -26,6 +27,9 @@ export default function App() {
   const { locating, current, forecast, loading, error, handleGeolocation, resetCoords } = useWeather(city);
   const { backgroundStyle, glassCardStyle } = useDynamicStyleWeatherBg(city);
 
+  // Debounced Query (aktualisiert sich erst 500ms nach dem letzten Tastendruck)
+  const debouncedQuery = useDebounce(query, 500);
+
   // --- EVENT HANDLER (Aktionen des Nutzers) ---
 
   // Formular absenden (Suche)
@@ -35,6 +39,16 @@ export default function App() {
     resetCoords(); // GPS-Modus deaktivieren, da nach Stadt gesucht wird
     setCity(query.trim()); // Neue Stadt setzen -> triggert useEffect
   }
+
+  // Sobald debouncedQuery stabil ist, aktualisieren wir city
+  useEffect(() => {
+    const trimmed = debouncedQuery.trim();
+    // Mindestens 3 Zeichen verhindern unnötige 404-Fehler bei kurzen Fragmenten
+    if (trimmed.length >= 3 && trimmed !== city) {
+      resetCoords(); // GPS-Modus deaktivieren, da getippt wurde
+      setCity(trimmed);
+    }
+  }, [debouncedQuery, city, resetCoords, setCity]);
 
   // --- RENDERING (JSX) ---
   return (
@@ -82,7 +96,7 @@ export default function App() {
           <Theme radius="full">
             <Button
               type="button"
-              onClick={handleGeolocation}
+              onClick={ () => {handleGeolocation}}
               disabled={locating}
             >
               {locating ? "Suche..." : <Crosshair2Icon />}
