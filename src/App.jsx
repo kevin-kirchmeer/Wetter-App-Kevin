@@ -13,8 +13,8 @@ import {
 import { Crosshair2Icon } from "@radix-ui/react-icons";
 import { useState } from "react";
 import  useWeather  from "./hooks/useWeather";
-// Hintergrund-Logik je nach Wetterlage importieren
-import { getWeatherBackground } from "./js/weatherBackground";
+import useDynamicStyleWeatherBg from "./hooks/useDynamicStyleWeatherBg";
+
 // Speichern der letzten Eingabe von City
 import { useLocalStorage } from "./hooks/useLocalStorage";
 
@@ -24,6 +24,7 @@ export default function App() {
   const [city, setCity] = useLocalStorage('lastCity', 'Berlin'); // Früher: Aktive Stadt für die API-Abfrage (Start: Berlin) // Jetzt: Speichert die letzte Eingegebene Stadt
 
   const { locating, current, forecast, loading, error, handleGeolocation, resetCoords } = useWeather(city);
+  const { backgroundStyle, glassCardStyle } = useDynamicStyleWeatherBg();
 
   // --- EVENT HANDLER (Aktionen des Nutzers) ---
 
@@ -34,24 +35,6 @@ export default function App() {
     resetCoords(); // GPS-Modus deaktivieren, da nach Stadt gesucht wird
     setCity(query.trim()); // Neue Stadt setzen -> triggert useEffect
   }
-
-  // --- DYNAMISCHE WERTE & STYLES ---
-  // ?. (Optional Chaining): Verhindert Absturz, falls current noch null ist
-  const weatherTyp = current?.weather?.[0]?.main;
-  const backgroundStyle = {
-    background: getWeatherBackground(weatherTyp),
-    minHeight: "100vh",
-    transition: "background 0.8s ease",
-  };
-
-  const glassCardStyle = {
-    "--card-background-color": "rgba(255, 255, 255, 0.20)",
-    backgroundColor: "rgba(255, 255, 255, 0.75) !important",
-    backdropFilter: "blur(1px)",
-    WebkitBackdropFilter: "blur(1px)",
-    border: "1px solid rgba(255, 255, 255, 0.3)",
-    boxShadow: "0 8px 32px rgba(0, 0, 0, 0.08)",
-  };
 
   // --- RENDERING (JSX) ---
   return (
