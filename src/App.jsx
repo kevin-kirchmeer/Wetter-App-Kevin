@@ -15,11 +15,13 @@ import { useState } from "react";
 import  useWeather  from "./hooks/useWeather";
 // Hintergrund-Logik je nach Wetterlage importieren
 import { getWeatherBackground } from "./js/weatherBackground";
+// Speichern der letzten Eingabe von City
+import { useLocalStorage } from "./hooks/useLocalStorage";
 
 export default function App() {
   // --- STATES (Das Gedächtnis der Komponente) ---
   const [query, setQuery] = useState(""); // Merkt sich die aktuelle Eingabe im Suchfeld
-  const [city, setCity] = useState("Berlin"); // Aktive Stadt für die API-Abfrage (Start: Berlin)
+  const [city, setCity] = useLocalStorage('lastCity', 'Berlin'); // Früher: Aktive Stadt für die API-Abfrage (Start: Berlin) // Jetzt: Speichert die letzte Eingegebene Stadt
 
   const { locating, current, forecast, loading, error, handleGeolocation, resetCoords } = useWeather(city);
 
