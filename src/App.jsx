@@ -16,6 +16,7 @@ import useWeather from "./hooks/useWeather";
 import useDebounce from "./hooks/useDebounce";
 import useDynamicStyleWeatherBg from "./hooks/useDynamicStyleWeatherBg";
 import HomeCityCard from "./components/HomeCityCard";
+import useToggle from "./hooks/useToggle"; // FEHLER 1 BEHOBEN: Import hat gefehlt
 
 // Speichern der letzten Eingabe von City
 import { useLocalStorage } from "./hooks/useLocalStorage";
@@ -25,6 +26,12 @@ export default function App() {
   const [query, setQuery] = useState(""); // Merkt sich die aktuelle Eingabe im Suchfeld
   const [city, setCity] = useLocalStorage("lastCity", "Berlin"); // Aktive Stadt für die API-Abfrage (Start: Berlin) // Jetzt: Speichert die letzte Eingegebene Stadt
 
+  // useToggle für die Einheit (°C = false / metric, °F = true / imperial)
+  const [isFahrenheit, toggleUnit] = useToggle(false);
+  const units = isFahrenheit ? "imperial" : "metric";
+  const unitSymbol = isFahrenheit ? "°F" : "°C";
+  const windUnit = isFahrenheit ? "mph" : "m/s";
+
   const {
     locating,
     current,
@@ -33,7 +40,7 @@ export default function App() {
     error,
     handleGeolocation,
     resetCoords,
-  } = useWeather(city);
+  } = useWeather(city, units);
   const { backgroundStyle, glassCardStyle } = useDynamicStyleWeatherBg(city);
 
   // Debounced Query (aktualisiert sich erst 500ms nach dem letzten Tastendruck)
@@ -77,44 +84,65 @@ export default function App() {
           </Text>
         </Flex>
 
-        <Flex
-          gap="2"
-          justify={{ initial: "center" }}
-          align={{ initial: "center" }}
-        >
-          {/* onSubmit ruft handleSubmit auf (Enter oder Klick auf Button) */}
-          <form onSubmit={handleSubmit}>
-            <Theme radius="full">
-              {/* Controlled Component: value bindet an query, onChange updatet query */}
-              <TextField.Root
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                size="3"
-                placeholder="Stadt suchen..."
-              >
-                <TextField.Slot side="right" px="1">
-                  <Button type="submit" size="2">
-                    Suchen
-                  </Button>
-                </TextField.Slot>
-              </TextField.Root>
-            </Theme>
-          </form>
-
-          {/* GPS-Button: Ruft handleGeolocation auf, deaktiviert während der Suche */}
+        <Flex gap="2" justify="center" align="center">
+          
+          {/* Umschalt-Button für °C / °F */}
           <Theme radius="full">
             <Button
               type="button"
-              onClick={handleGeolocation}
-              disabled={locating}
+              onClick={toggleUnit}
+              style={{ cursor: "pointer", minWidth: "48px" }}
             >
-              {locating ? "Suche..." : <Crosshair2Icon />}
+              {isFahrenheit ? "°F" : "°C"}
             </Button>
           </Theme>
+
+          <Flex
+            gap="2"
+            justify={{ initial: "center" }}
+            align={{ initial: "center" }}
+          >
+            {/* onSubmit ruft handleSubmit auf (Enter oder Klick auf Button) */}
+            <form onSubmit={handleSubmit}>
+              <Theme radius="full">
+                {/* Controlled Component: value bindet an query, onChange updatet query */}
+                <TextField.Root
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  size="3"
+                  placeholder="Stadt suchen..."
+                >
+                  <TextField.Slot side="right" px="1">
+                    <Button type="submit" size="2">
+                      Suchen
+                    </Button>
+                  </TextField.Slot>
+                </TextField.Root>
+              </Theme>
+            </form>
+
+            {/* GPS-Button: Ruft handleGeolocation auf, deaktiviert während der Suche */}
+            <Theme radius="full">
+              <Button
+                type="button"
+                onClick={handleGeolocation}
+                disabled={locating}
+              >
+                {locating ? "Suche..." : <Crosshair2Icon />}
+              </Button>
+            </Theme>
+          </Flex>
         </Flex>
+
       </Flex>
-      
-      <HomeCityCard cityName="Weilburg" glassCardStyle={glassCardStyle} />
+
+      {/* FEHLER 4 BEHOBEN: units und unitSymbol an HomeCityCard übergeben */}
+      <HomeCityCard
+        cityName="Weilburg"
+        glassCardStyle={glassCardStyle}
+        units={units}
+        unitSymbol={unitSymbol}
+      />
 
       {/* Bedingtes Rendering: Progress Bar nur anzeigen wenn loading === true */}
       {loading && (
@@ -152,13 +180,14 @@ export default function App() {
                   style={{ width: 80, height: 80 }}
                 />
               )}
+              {/* FEHLER 2 BEHOBEN: °C durch unitSymbol ersetzt */}
               <Text size="8" weight="bold">
-                {Math.round(current.main.temp)} °C
+                {Math.round(current.main.temp)} {unitSymbol}
               </Text>
             </Flex>
             <Text size="2">{current.weather[0].description}</Text>
-            {/* Math.round: Rundet Dezimalwerte auf ganze Grad Celsius */}
-            <Text>Wind: {current.wind.speed} m/s</Text>
+            {/* FEHLER 2 BEHOBEN: m/s durch windUnit ersetzt */}
+            <Text>Wind: {current.wind.speed} {windUnit}</Text>
           </Flex>
         </Flex>
       )}
@@ -175,7 +204,8 @@ export default function App() {
                   weekday: "short",
                 })}
               </Text>
-              <Text>{Math.round(day.main.temp)} °C</Text>
+              {/* FEHLER 3 BEHOBEN: °C durch unitSymbol ersetzt */}
+              <Text>{Math.round(day.main.temp)} {unitSymbol}</Text>
               <img
                 src={`https://openweathermap.org/img/wn/${day.weather[0].icon}@2x.png`}
                 alt="weather icon"

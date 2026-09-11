@@ -9,7 +9,7 @@ import {
 // React Hooks: useState (Speicher) & useEffect (Nebeneffekte/Laden)
 import { useEffect, useState } from "react";
 
-export default function useWeather(city) {
+export default function useWeather(city, units = "metrics") {
   // --- STATES (Das Gedächtnis der Komponente) ---
   const [current, setCurrent] = useState(null); // Speichert die empfangenen aktuellen Wetterdaten
   const [forecast, setForecast] = useState([]); // Speichert die 5-Tage-Vorhersage als Array
@@ -35,12 +35,13 @@ export default function useWeather(city) {
                 coords.lat,
                 coords.lon,
                 controller.signal,
+                units,
               ),
               getForecastByCoords(coords.lat, coords.lon, controller.signal),
             ])
           : Promise.all([
-              getCurrentWeather(city, controller.signal),
-              getForecast(city, controller.signal),
+              getCurrentWeather(city, controller.signal, units),
+              getForecast(city, controller.signal, units),
             ]));
 
         // Daten im State speichern -> Löst Re-Render aus
@@ -62,7 +63,7 @@ export default function useWeather(city) {
 
     // Cleanup-Funktion: Bricht alte Anfrage ab, wenn sich city/coords ändern
     return () => controller.abort();
-  }, [city, coords]); // Dependency-Array: Feuert nur neu, wenn city oder coords sich ändern
+  }, [city, coords, units]); // Dependency-Array: Feuert nur neu, wenn city oder coords sich ändern
 
   // GPS-Standort ermitteln
   function handleGeolocation() {

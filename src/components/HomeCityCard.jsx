@@ -4,10 +4,10 @@ import { HomeIcon } from "@radix-ui/react-icons";
 
 export default function HomeCityCard({
   cityName = "Weilburg",
-  glassCardStyle,
+  glassCardStyle, units = "metric", unitSymbol = "°C"
 }) {
   // Eigene, unabhängige Instanz von useWeather:
-  const { current, loading, error } = useWeather(cityName);
+  const { current, loading, error } = useWeather(cityName, units);
 
   return (
     <Card style={glassCardStyle} radius="medium" size="2">
@@ -15,7 +15,7 @@ export default function HomeCityCard({
         <Flex justify={{ initial: "center" }}>
           {
             <Flex justify={{ initial: "center" }} align={{initial: "center"}} gap="2">
-              <HomeIcon></HomeIcon>
+              <HomeIcon />
               <Heading size="3">{cityName}</Heading>
             </Flex>
           }
@@ -50,8 +50,9 @@ export default function HomeCityCard({
               </Flex>
             </Flex>
 
+            {/* Hier war der Fehler: °C durch die Prop unitSymbol ersetzt */}
             <Text size="6" weight="bold">
-              {Math.round(current.main.temp)} °C
+              {Math.round(current.main.temp)} {unitSymbol}
             </Text>
           </Flex>
         )}
