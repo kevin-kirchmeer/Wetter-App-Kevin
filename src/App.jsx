@@ -24,7 +24,7 @@ export default function App() {
   const [city, setCity] = useLocalStorage('lastCity', 'Berlin'); // Früher: Aktive Stadt für die API-Abfrage (Start: Berlin) // Jetzt: Speichert die letzte Eingegebene Stadt
 
   const { locating, current, forecast, loading, error, handleGeolocation, resetCoords } = useWeather(city);
-  const { backgroundStyle, glassCardStyle } = useDynamicStyleWeatherBg();
+  const { backgroundStyle, glassCardStyle } = useDynamicStyleWeatherBg(city);
 
   // --- EVENT HANDLER (Aktionen des Nutzers) ---
 
