@@ -12,26 +12,29 @@ import {
 
 import { Crosshair2Icon } from "@radix-ui/react-icons";
 import { useEffect, useState } from "react";
+
+// Eigene Custom Hooks & Komponenten importieren
 import useWeather from "./hooks/useWeather";
 import useDebounce from "./hooks/useDebounce";
 import useDynamicStyleWeatherBg from "./hooks/useDynamicStyleWeatherBg";
 import HomeCityCard from "./components/HomeCityCard";
-import useToggle from "./hooks/useToggle"; // FEHLER 1 BEHOBEN: Import hat gefehlt
-
-// Speichern der letzten Eingabe von City
+import useToggle from "./hooks/useToggle";
 import { useLocalStorage } from "./hooks/useLocalStorage";
 
 export default function App() {
-  // --- STATES (Das Gedächtnis der Komponente) ---
-  const [query, setQuery] = useState(""); // Merkt sich die aktuelle Eingabe im Suchfeld
-  const [city, setCity] = useLocalStorage("lastCity", "Berlin"); // Aktive Stadt für die API-Abfrage (Start: Berlin) // Jetzt: Speichert die letzte Eingegebene Stadt
+  // --- STATES & SPEICHER ---
+  const [query, setQuery] = useState(""); // Merkt sich Zeichen für Zeichen die Texteingabe im Suchfeld
+  const [city, setCity] = useLocalStorage("lastCity", "Berlin"); // Speichert gesuchte Stadt dauerhaft im Browser (Startwert: Berlin)
 
-  // useToggle für die Einheit (°C = false / metric, °F = true / imperial)
+  // Einheiten-Umschalter (°C / °F):
+  // - isFahrenheit: false = Celsius, true = Fahrenheit
+  // - toggleUnit: Funktion zum Hin- und Herschalten
   const [isFahrenheit, toggleUnit] = useToggle(false);
-  const units = isFahrenheit ? "imperial" : "metric";
-  const unitSymbol = isFahrenheit ? "°F" : "°C";
-  const windUnit = isFahrenheit ? "mph" : "m/s";
+  const units = isFahrenheit ? "imperial" : "metric"; // API-Parameter: imperial (Fahrenheit) oder metric (Celsius)
+  const unitSymbol = isFahrenheit ? "°F" : "°C"; // Passendes Anzeigesymbol für die Temperatur
+  const windUnit = isFahrenheit ? "mph" : "m/s"; // Passende Einheit für Windgeschwindigkeit
 
+  // useWeather: Holt Wetterdaten, Vorhersage, Ladezustand und GPS-Funktionen
   const {
     locating,
     current,
@@ -41,34 +44,37 @@ export default function App() {
     handleGeolocation,
     resetCoords,
   } = useWeather(city, units);
+
+  // useDynamicStyleWeatherBg: Liefert Hintergrund- und Glas-Styles passend zum aktuellen Wetter
   const { backgroundStyle, glassCardStyle } = useDynamicStyleWeatherBg(city);
 
-  // Debounced Query (aktualisiert sich erst 500ms nach dem letzten Tastendruck)
+  // useDebounce: Wartet 500ms nach dem letzten Tastendruck, bevor der Wert übernommen wird (schont die API)
   const debouncedQuery = useDebounce(query, 500);
 
-  // --- EVENT HANDLER (Aktionen des Nutzers) ---
+  // --- EVENT HANDLER & EFFEKTE ---
 
-  // Formular absenden (Suche)
+  // Manuelles Absenden des Formulars (z. B. per Enter oder Klick auf "Suchen")
   function handleSubmit(e) {
-    e.preventDefault(); // Verhindert Seiten-Reload durch das Formular
+    e.preventDefault(); // Verhindert Neuladen der gesamten Webseite
     if (query.trim() === "") return; // Leere Eingaben ignorieren
-    resetCoords(); // GPS-Modus deaktivieren, da nach Stadt gesucht wird
-    setCity(query.trim()); // Neue Stadt setzen -> triggert useEffect
+    resetCoords(); // Vorherige GPS-Koordinaten verwerfen, da manuell gesucht wird
+    setCity(query.trim()); // Neue Stadt setzen -> triggert automatischen Datenabruf
   }
 
-  // Sobald debouncedQuery stabil ist, aktualisieren wir city
+  // Automatische Suche bei Texteingabe (nach Ablauf des 500ms-Timers)
   useEffect(() => {
     const trimmed = debouncedQuery.trim();
-    // Mindestens 3 Zeichen verhindern unnötige 404-Fehler bei kurzen Fragmenten
+    // Erst ab 3 Buchstaben suchen und nur, wenn es nicht schon die aktive Stadt ist
     if (trimmed.length >= 3 && trimmed !== city) {
-      resetCoords(); // GPS-Modus deaktivieren, da getippt wurde
-      setCity(trimmed);
+      resetCoords(); // GPS-Koordinaten verwerfen
+      setCity(trimmed); // Stadt aktualisieren
     }
   }, [debouncedQuery, city, resetCoords, setCity]);
 
   // --- RENDERING (JSX) ---
   return (
     <Flex direction="column" p="5" gap="6" style={backgroundStyle}>
+      {/* Kopfbereich: Logo/Titel & Steuerungsleiste */}
       <Flex
         justify={{ initial: "start", md: "between" }}
         align={{ initial: "center" }}
@@ -85,8 +91,7 @@ export default function App() {
         </Flex>
 
         <Flex gap="2" justify="center" align="center">
-          
-          {/* Umschalt-Button für °C / °F */}
+          {/* Umschalt-Button für Temperatur-Einheit (°C / °F) */}
           <Theme radius="full">
             <Button
               type="button"
@@ -102,10 +107,10 @@ export default function App() {
             justify={{ initial: "center" }}
             align={{ initial: "center" }}
           >
-            {/* onSubmit ruft handleSubmit auf (Enter oder Klick auf Button) */}
+            {/* Formular für Stadtsuche */}
             <form onSubmit={handleSubmit}>
               <Theme radius="full">
-                {/* Controlled Component: value bindet an query, onChange updatet query */}
+                {/* Controlled Input: Wert hängt an State 'query', Aktualisierung bei Tastendruck */}
                 <TextField.Root
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
@@ -121,7 +126,7 @@ export default function App() {
               </Theme>
             </form>
 
-            {/* GPS-Button: Ruft handleGeolocation auf, deaktiviert während der Suche */}
+            {/* GPS-Standort-Button: Deaktiviert, solange Standort ermittelt wird */}
             <Theme radius="full">
               <Button
                 type="button"
@@ -133,10 +138,9 @@ export default function App() {
             </Theme>
           </Flex>
         </Flex>
-
       </Flex>
 
-      {/* FEHLER 4 BEHOBEN: units und unitSymbol an HomeCityCard übergeben */}
+      {/* Feste Heimatstadt-Karte (lädt unabhängig eigene Wetterdaten für Weilburg) */}
       <HomeCityCard
         cityName="Weilburg"
         glassCardStyle={glassCardStyle}
@@ -144,17 +148,17 @@ export default function App() {
         unitSymbol={unitSymbol}
       />
 
-      {/* Bedingtes Rendering: Progress Bar nur anzeigen wenn loading === true */}
+      {/* Ladebalken: Nur sichtbar, solange Daten über useWeather geladen werden */}
       {loading && (
         <Flex justify={{ initial: "center" }} align={{ initial: "center" }}>
           <Progress />
         </Flex>
       )}
 
-      {/* Bedingtes Rendering: Text nur anzeigen wenn ein Fehlertext existiert */}
+      {/* Fehleranzeige: Zeigt Fehlermeldung als Text an, falls vorhanden */}
       {error && <Text size="4">{error}</Text>}
 
-      {/* Aktuelle Wetterkarte: Nur anzeigen wenn Daten geladen wurden (current !== null) */}
+      {/* Haupt-Wetteranzeige: Wird nur gerendert, wenn Wetterdaten vorhanden sind (current !== null) */}
       {current && (
         <Flex
           gap="2"
@@ -173,6 +177,7 @@ export default function App() {
               direction={{ initial: "column" }}
               align={{ initial: "center" }}
             >
+              {/* Optional Chaining (?.): Verhindert Absturz bei fehlendem Wetter-Array */}
               {current.weather?.[0]?.icon && (
                 <img
                   src={`https://openweathermap.org/img/wn/${current.weather[0].icon}@2x.png`}
@@ -180,31 +185,29 @@ export default function App() {
                   style={{ width: 80, height: 80 }}
                 />
               )}
-              {/* FEHLER 2 BEHOBEN: °C durch unitSymbol ersetzt */}
+              {/* Math.round: Rundet Temperatur auf ganze Zahlen */}
               <Text size="8" weight="bold">
                 {Math.round(current.main.temp)} {unitSymbol}
               </Text>
             </Flex>
             <Text size="2">{current.weather[0].description}</Text>
-            {/* FEHLER 2 BEHOBEN: m/s durch windUnit ersetzt */}
             <Text>Wind: {current.wind.speed} {windUnit}</Text>
           </Flex>
         </Flex>
       )}
 
-      {/* Vorhersage-Grid: .map() läuft durch das Array und rendert für jeden Tag eine Card */}
+      {/* 5-Tage-Vorhersage: Rendert per .map() für jeden Vorhersage-Eintrag eine eigene Karte */}
       <Grid columns={{ initial: "1", md: "5" }} gap="3" width="auto">
         {forecast.map((day) => (
-          // key={day.dt}: Eindeutige ID für React zur Render-Optimierung
+          // key={day.dt}: Eindeutiger Zeitstempel als Schlüssel für React
           <Card style={glassCardStyle} key={day.dt} radius="medium">
             <Flex justify="center" align="center" direction="column">
-              {/* Formatiert den Datums-String in den deutschen Wochentag (z. B. "Mo") */}
+              {/* Wandelt Datums-String in deutschen Wochentag um (z. B. "Mo", "Di") */}
               <Text>
                 {new Date(day.dt_txt).toLocaleDateString("de-DE", {
                   weekday: "short",
                 })}
               </Text>
-              {/* FEHLER 3 BEHOBEN: °C durch unitSymbol ersetzt */}
               <Text>{Math.round(day.main.temp)} {unitSymbol}</Text>
               <img
                 src={`https://openweathermap.org/img/wn/${day.weather[0].icon}@2x.png`}

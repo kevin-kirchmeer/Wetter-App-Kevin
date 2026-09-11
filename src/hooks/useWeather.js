@@ -6,29 +6,33 @@ import {
   getForecastByCoords,
 } from "../api/weatherApi";
 
-// React Hooks: useState (Speicher) & useEffect (Nebeneffekte/Laden)
+// React Hooks: useState (Zustand speichern) & useEffect (Nebeneffekte/Daten laden)
 import { useEffect, useState } from "react";
 
-export default function useWeather(city, units = "metrics") {
+// Custom Hook: Verwaltet den gesamten Datenabruf und Status für Wetter & GPS
+// - city: Name der gesuchten Stadt
+// - units: Einheit ("metric" für Celsius, "imperial" für Fahrenheit)
+export default function useWeather(city, units = "metric") {
   // --- STATES (Das Gedächtnis der Komponente) ---
-  const [current, setCurrent] = useState(null); // Speichert die empfangenen aktuellen Wetterdaten
-  const [forecast, setForecast] = useState([]); // Speichert die 5-Tage-Vorhersage als Array
-  const [loading, setLoading] = useState(false); // Ampel: Lädt die App gerade Daten? (true/false)
-  const [error, setError] = useState(null); // Speichert Fehlermeldungen für den Nutzer
-  const [locating, setLocating] = useState(false); // Ampel: Sucht das Gerät gerade GPS? (true/false)
-  const [coords, setCoords] = useState(null); // GPS-Daten: { lat, lon } oder null
+  const [current, setCurrent] = useState(null); // Aktuelles Wetter (Temperatur, Wind etc.)
+  const [forecast, setForecast] = useState([]); // Array der 5-Tage-Vorhersage
+  const [loading, setLoading] = useState(false); // Ampel: Zeigt an, ob Daten geladen werden
+  const [error, setError] = useState(null); // Text für Fehlermeldungen (sonst null)
+  const [locating, setLocating] = useState(false); // Ampel: Zeigt an, ob GPS aktiv sucht
+  const [coords, setCoords] = useState(null); // GPS-Objekt { lat, lon } oder null
 
-  // --- USEEFFECT (Reagiert auf Änderungen von city oder coords) ---
+  // --- USEEFFECT (Reagiert auf Änderungen von city, coords oder units) ---
   useEffect(() => {
-    // Not-Aus-Schalter: Bricht veraltete Netzwerkanfragen ab
+    // Erzeugt Abbruch-Signal für laufende fetch-Aufrufe
     const controller = new AbortController();
 
     async function load() {
-      setLoading(true); // Ladebalken aktivieren
+      setLoading(true); // Ladezustand starten
       setError(null); // Alten Fehler zurücksetzen
 
       try {
-        // Promise.all startet beide Requests zeitgleich im Netzwerk
+        // Promise.all: Startet beide API-Anfragen parallel statt nacheinander
+        // Ternary Operator (? :): Prüft, ob GPS-Koordinaten vorliegen oder nach Stadt gesucht wird
         const [weatherData, forecastData] = await (coords
           ? Promise.all([
               getCurrentWeatherByCoords(
@@ -37,48 +41,53 @@ export default function useWeather(city, units = "metrics") {
                 controller.signal,
                 units,
               ),
-              getForecastByCoords(coords.lat, coords.lon, controller.signal),
+              getForecastByCoords(
+                coords.lat,
+                coords.lon,
+                controller.signal,
+                units,
+              ),
             ])
           : Promise.all([
               getCurrentWeather(city, controller.signal, units),
               getForecast(city, controller.signal, units),
             ]));
 
-        // Daten im State speichern -> Löst Re-Render aus
+        // Aktuelle Daten im State ablegen
         setCurrent(weatherData);
 
-        // Filter: Aus allen 3-Stunden-Werten nur die um 12:00 Uhr mittags behalten
+        // Filter: Nur die Einträge für 12:00 Uhr mittags in die Vorhersage übernehmen
         setForecast(
           forecastData.list.filter((item) => item.dt_txt.includes("12:00:00")),
         );
       } catch (error) {
-        // Gewollte Abbrüche ignorieren, echte Fehler im State speichern
+        // Nur echte Fehler speichern (manuell abgebrochene Anfragen ignorieren)
         if (error.name !== "AbortError") setError(error.message);
       } finally {
-        setLoading(false); // Ladebalken immer deaktivieren (egal ob Erfolg oder Fehler)
+        setLoading(false); // Ladezustand beenden (sowohl bei Erfolg als auch bei Fehler)
       }
     }
 
     load();
 
-    // Cleanup-Funktion: Bricht alte Anfrage ab, wenn sich city/coords ändern
+    // Cleanup-Funktion: Bricht offene Requests ab, wenn sich Abhängigkeiten ändern
     return () => controller.abort();
-  }, [city, coords, units]); // Dependency-Array: Feuert nur neu, wenn city oder coords sich ändern
+  }, [city, coords, units]); // Feuert neu, wenn Stadt, Koordinaten oder Einheit wechseln
 
   // GPS-Standort ermitteln
   function handleGeolocation() {
-    // Check: Kann der Browser überhaupt Geolocation?
+    // Prüfen, ob der Browser Standortabfragen unterstützt
     if (!navigator.geolocation) {
       setError("Standortermittlung wird von deinem Browser nicht unterstützt.");
       return;
     }
 
-    setLocating(true); // GPS-Ladezustand aktivieren
-    setError(null); // Fehler zurücksetzen
+    setLocating(true); // GPS-Suche aktivieren
+    setError(null); // Alten Fehler löschen
 
-    // Browser-Standort abfragen
+    // GPS-Koordinaten vom Browser anfordern
     navigator.geolocation.getCurrentPosition(
-      // Erfolg: Koordinaten speichern -> triggert useEffect
+      // Erfolg: Koordinaten setzen -> triggert useEffect
       (position) => {
         setCoords({
           lat: position.coords.latitude,
@@ -86,7 +95,7 @@ export default function useWeather(city, units = "metrics") {
         });
         setLocating(false);
       },
-      // Fehler: Zugriff verweigert oder Timeout nach 10s
+      // Fehler: Zugriff verweigert oder Timeout nach 10 Sekunden
       () => {
         setError(
           "Standort konnte nicht ermittelt werden (Zugriff verweigert oder Timeout).",
@@ -97,10 +106,12 @@ export default function useWeather(city, units = "metrics") {
     );
   }
 
+  // Setzt die Koordinaten auf null zurück (z. B. wenn der Nutzer wieder nach einer Stadt sucht)
   function resetCoords() {
     setCoords(null);
   }
 
+  // Gibt alle Werte und Steuerungs-Funktionen für andere Komponenten frei
   return {
     locating,
     coords,
