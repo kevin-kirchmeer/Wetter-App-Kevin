@@ -12,9 +12,10 @@ import {
 
 import { Crosshair2Icon } from "@radix-ui/react-icons";
 import { useEffect, useState } from "react";
-import  useWeather  from "./hooks/useWeather";
+import useWeather from "./hooks/useWeather";
 import useDebounce from "./hooks/useDebounce";
 import useDynamicStyleWeatherBg from "./hooks/useDynamicStyleWeatherBg";
+import HomeCityCard from "./components/HomeCityCard";
 
 // Speichern der letzten Eingabe von City
 import { useLocalStorage } from "./hooks/useLocalStorage";
@@ -22,9 +23,17 @@ import { useLocalStorage } from "./hooks/useLocalStorage";
 export default function App() {
   // --- STATES (Das Gedächtnis der Komponente) ---
   const [query, setQuery] = useState(""); // Merkt sich die aktuelle Eingabe im Suchfeld
-  const [city, setCity] = useLocalStorage('lastCity', 'Berlin'); // Aktive Stadt für die API-Abfrage (Start: Berlin) // Jetzt: Speichert die letzte Eingegebene Stadt
+  const [city, setCity] = useLocalStorage("lastCity", "Berlin"); // Aktive Stadt für die API-Abfrage (Start: Berlin) // Jetzt: Speichert die letzte Eingegebene Stadt
 
-  const { locating, current, forecast, loading, error, handleGeolocation, resetCoords } = useWeather(city);
+  const {
+    locating,
+    current,
+    forecast,
+    loading,
+    error,
+    handleGeolocation,
+    resetCoords,
+  } = useWeather(city);
   const { backgroundStyle, glassCardStyle } = useDynamicStyleWeatherBg(city);
 
   // Debounced Query (aktualisiert sich erst 500ms nach dem letzten Tastendruck)
@@ -96,7 +105,7 @@ export default function App() {
           <Theme radius="full">
             <Button
               type="button"
-              onClick={ () => {handleGeolocation}}
+              onClick={handleGeolocation}
               disabled={locating}
             >
               {locating ? "Suche..." : <Crosshair2Icon />}
@@ -104,6 +113,8 @@ export default function App() {
           </Theme>
         </Flex>
       </Flex>
+      
+      <HomeCityCard cityName="Weilburg" glassCardStyle={glassCardStyle} />
 
       {/* Bedingtes Rendering: Progress Bar nur anzeigen wenn loading === true */}
       {loading && (
