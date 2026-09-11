@@ -21,7 +21,7 @@ import { useLocalStorage } from "./hooks/useLocalStorage";
 export default function App() {
   // --- STATES (Das Gedächtnis der Komponente) ---
   const [query, setQuery] = useState(""); // Merkt sich die aktuelle Eingabe im Suchfeld
-  const [city, setCity] = useLocalStorage('lastCity', 'Berlin'); // Früher: Aktive Stadt für die API-Abfrage (Start: Berlin) // Jetzt: Speichert die letzte Eingegebene Stadt
+  const [city, setCity] = useLocalStorage('lastCity', 'Berlin'); // Aktive Stadt für die API-Abfrage (Start: Berlin) // Jetzt: Speichert die letzte Eingegebene Stadt
 
   const { locating, current, forecast, loading, error, handleGeolocation, resetCoords } = useWeather(city);
   const { backgroundStyle, glassCardStyle } = useDynamicStyleWeatherBg(city);
